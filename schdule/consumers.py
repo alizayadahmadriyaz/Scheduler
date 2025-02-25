@@ -13,16 +13,20 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.users = self.room_name.split("_")[1:]
+        self.users  = self.room_name.split("_")[1:]
+        
 
-        if str(self.scope["user"]) not in self.users:
-            await self.close()
-            return
+
+        # if str(self.scope["user"]) not in self.users:
+        #     await self.close()
+        #     return
 
         self.room_group_name = f"chat_{'_'.join(sorted(self.users))}"
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-
+        print(10*'*')
+        print(self.room_group_name)
+        print(10*'*')
         # Fetch previous messages and send them to user
         await self.send_previous_messages()
 
@@ -33,17 +37,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message = data["message"]
         sender_username = data["sender"]
-        task_id = None  # Fetch task_id if exists
+        # task_id = None  # Fetch task_id if exists
 
         receiver_username = [user for user in self.users if user != sender_username][0]
 
         sender = await sync_to_async(User.objects.get)(username=sender_username)
         receiver = await sync_to_async(User.objects.get)(username=receiver_username)
-
-        if task_id:
-            task = await sync_to_async(Task.objects.get)(id=task_id)
-        else:
-            task = None  # If no task_id is provided, set task to None
+        print(sender)
+        print(receiver)
+        # if task_id:
+        #     task = await sync_to_async(Task.objects.get)(id=task_id)
+        # else:
+        #     task = None  # If no task_id is provided, set task to None
 
         # Save message to database
         await sync_to_async(ChatMessage.objects.create)(
@@ -70,10 +75,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender__username__in=self.users, receiver__username__in=self.users
             ).order_by("created_at")
         )
-
-        messages_data = [
-            {"sender": msg.sender.username, "message": msg.message}
-            for msg in messages
-        ]
-
+        # print(messages[0].message)
+        # for msg in messages:
+        #     print(msg.sender.username)
+        messages_data = await sync_to_async(lambda: [
+        {"sender": msg.sender.username, "message": msg.message}
+        for msg in messages
+        ])()
+        print(messages_data)
         await self.send(text_data=json.dumps({"previous_messages": messages_data}))

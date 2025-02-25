@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.utils.timezone import now
 # Create your models here.
 
 
@@ -10,7 +10,10 @@ class task(models.Model):
     flexibility=models.IntegerField()
     departure_place=models.TextField()
     destination_place=models.TextField()
-
+    def is_expired(self):
+        """Check if the task is past its due time."""
+        return self.date < now()
+    
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")

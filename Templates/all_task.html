@@ -109,7 +109,8 @@
     let chatSockets = {}; // Store multiple chat socket connections
 
     function openChat(user1, user2) {
-    let chatId = `chat_${user1}_${user2}`;
+    const sortedUsers = [user1, user2].sort().join("_");
+    let chatId = `chat_${sortedUsers}`;
 
     if (document.getElementById(chatId)) return;
 
@@ -131,11 +132,11 @@
     `;
 
     chatContainer.appendChild(chatBox);
-
-    const roomName = `chat_${user1}_${user2}`;
+    // const sortedUsers = [user1, user2].sort().join("_");
+    const roomName = `chat_${sortedUsers}`;
     let chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${roomName}/`);
     chatSockets[chatId] = chatSocket;
-
+        console.log(roomName)
     chatSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
         const messagesDiv = document.getElementById(`messages_${chatId}`);
